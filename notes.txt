@@ -1,0 +1,25 @@
+output_dimensionality - We're using 768 dimensions here to keep the stored vectors smaller. Gemini supports configurable output dimensionality; Google recommends 768, 1536, or 3072 for gemini-embedding-001.
+
+the number of values or elements in a single output vector produced by a model, layer, or function
+
+
+embedding query: result = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=query,
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=768
+        )
+    )
+
+    return result.embeddings[0].values
+
+
+retrieve_docs: results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k
+    )
+
+
+
+embed_query -> search embedded collection
