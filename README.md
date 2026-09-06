@@ -1,232 +1,714 @@
-# HR Assistant RAG
+# Enterprise Policy RAG Assistant
 
-An intelligent HR assistant built with Retrieval-Augmented Generation (RAG) to answer employee questions using internal company knowledge bases such as policies, onboarding guides, benefits information, FAQs, and HR documentation.
+An enterprise-style **Retrieval-Augmented Generation (RAG)** application built with **Python, Google Gemini, ChromaDB, and Streamlit**.
 
-The system combines semantic search with a large language model to provide grounded, context-aware answers while keeping responses linked to trusted HR documents.
+The application allows users to ask questions about company policies such as Leave, Travel, Work From Home, and Employee Benefits. Relevant policy chunks are retrieved using semantic search and supplied as context to Gemini to generate grounded responses.
 
-## Overview
+> **Portfolio Project:** This project uses fictional policy documents for demonstration and learning purposes. It does not connect to real employee or HR data.
 
-HR teams and employees often need quick answers to questions like:
+---
 
-- What is the leave policy?
-- How do I apply for reimbursement?
-- What are the employee benefits?
-- What are the onboarding steps for new hires?
-- Where can I find the remote work policy?
+## 🚀 Features
 
-This project solves that by indexing HR content into a vector database and retrieving the most relevant documents at query time before generating a response using an LLM.
+* 📄 Document ingestion from policy text files
+* ✂️ Configurable document chunking with overlap
+* 🏷️ Metadata enrichment for policy documents
+* 🧠 Gemini text embeddings
+* 🔎 Semantic vector search using ChromaDB
+* 📚 Top-K document retrieval
+* 🎯 Grounded LLM responses
+* 🛡️ Explicit handling of questions that cannot be answered from policy documents
+* 💬 Interactive Streamlit interface
+* 🔐 Environment-based API key configuration
+* ⚡ Batched embedding generation
+* 📌 Retrieved source and metadata visibility
 
-## Key Features
+---
 
-- RAG-based question answering over HR documents
-- Semantic retrieval using embeddings
-- Support for policy and knowledge-base search
-- Natural-language responses grounded in internal documents
-- Easy extension to additional HR knowledge sources
-- Configurable LLM backend
-- Clean API for integration into internal portals or chatbots
-
-## Architecture
-
-The project follows a standard RAG workflow:
-
-1. HR documents are collected from multiple sources (PDFs, text files, web pages, markdown, internal docs).
-2. Documents are split into smaller chunks.
-3. Each chunk is converted into embeddings using an embedding model.
-4. Relevant chunks are retrieved from a vector database based on user query similarity.
-5. The retrieved context is passed to an LLM along with the user question.
-6. The LLM generates a final answer grounded in the retrieved material.
-
-Typical flow:
-
-- User query
-- Embedding model
-- Vector store search
-- Context retrieval
-- LLM response generation
-- Final answer to the user
-
-## Tech Stack
-
-- Python
-- LangChain or similar orchestration framework
-- Vector database (FAISS, Qdrant, Pinecone, etc.)
-- Embedding model
-- LLM (OpenAI, Azure OpenAI, local model, or similar)
-- FastAPI / Streamlit / Flask (depending on app interface)
-- Data processing libraries for PDFs and text extraction
-
-## Project Structure
-
-A typical project layout may look like this:
+## 🏗️ Architecture
 
 ```text
-hr_assistant_rag/
-├── app/                  # Application entry points
-├── backend/              # API layer and business logic
-├── data/                 # Source documents and knowledge base
-├── embeddings/           # Embedding utilities
-├── retriever/            # Vector search and document loading
-├── prompts/              # Prompt templates
-├── utils/                # Helper utilities
-├── .env.example          # Sample environment configuration
-├── requirements.txt      # Python dependencies
-├── README.md             # Project documentation
-├── run.py                # Startup script
-└── config.py             # Application config
+                         ┌──────────────────────┐
+                         │   Policy Documents   │
+                         │                      │
+                         │ Leave                │
+                         │ Travel               │
+                         │ WFH                  │
+                         │ Benefits             │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      Chunking        │
+                         │                      │
+                         │ Chunk Size            │
+                         │ Overlap               │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │       Metadata       │
+                         │                      │
+                         │ Source               │
+                         │ Policy ID            │
+                         │ Department           │
+                         │ Policy Type          │
+                         │ Year                 │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │  Gemini Embeddings   │
+                         │                      │
+                         │ gemini-embedding-001 │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      ChromaDB        │
+                         │                      │
+                         │ Vector Store         │
+                         │ Documents            │
+                         │ Metadata             │
+                         └──────────┬───────────┘
+                                    │
+                                    │
+              ┌─────────────────────┘
+              │
+              ▼
+      ┌──────────────────┐
+      │   User Question  │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Query Embedding  │
+      │                  │
+      │ RETRIEVAL_QUERY  │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Semantic Search  │
+      │                  │
+      │ ChromaDB         │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │   Top-K Chunks   │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │ Grounding Prompt │
+      │                  │
+      │ Retrieved policy │
+      │ context          │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │    Gemini LLM    │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │  Grounded Answer │
+      └────────┬─────────┘
+               │
+               ▼
+      ┌──────────────────┐
+      │    Streamlit     │
+      │       UI         │
+      └──────────────────┘
 ```
 
-## Prerequisites
+---
 
-Before running the project, ensure you have:
+## 🔄 RAG Pipeline
 
-- Python 3.10+
-- A working virtual environment
-- Access to an LLM provider (OpenAI, Azure OpenAI, or a local model)
-- A vector database or local vector storage support
-- Relevant HR documents to index
+The application follows this pipeline:
 
-## Installation
+```text
+Documents
+    ↓
+Load
+    ↓
+Chunk
+    ↓
+Add Metadata
+    ↓
+Generate Embeddings
+    ↓
+Store in ChromaDB
+    ↓
+User Query
+    ↓
+Generate Query Embedding
+    ↓
+Semantic Search
+    ↓
+Retrieve Top-K Chunks
+    ↓
+Build Grounding Context
+    ↓
+Gemini
+    ↓
+Grounded Answer
+```
 
-1. Clone the repository:
+---
+
+## 🧠 Key AI Concepts Demonstrated
+
+### 1. Chunking
+
+Large documents are divided into smaller pieces before embedding.
+
+Example:
+
+```text
+Policy Document
+       ↓
+Chunk 1
+Chunk 2
+Chunk 3
+Chunk 4
+```
+
+The application uses overlapping chunks to reduce the risk of splitting related information across chunk boundaries.
+
+---
+
+### 2. Metadata
+
+Each chunk is associated with metadata such as:
+
+```json
+{
+  "source": "leave_policy.txt",
+  "department": "HR",
+  "policy_type": "leave",
+  "policy_id": "HR-LEAVE-001",
+  "year": 2026,
+  "chunk_id": 2
+}
+```
+
+This allows the retrieval layer to retain the origin and classification of each piece of information.
+
+---
+
+### 3. Embeddings
+
+Policy chunks are converted into numerical vectors using Google's Gemini embedding model.
+
+The project currently uses:
+
+```text
+gemini-embedding-001
+```
+
+Google documents this model for semantic search and document retrieval and supports retrieval-specific task types including `RETRIEVAL_DOCUMENT` and `RETRIEVAL_QUERY`.
+
+---
+
+### 4. Semantic Search
+
+A user's question is converted into a query embedding.
+
+ChromaDB then performs nearest-neighbor similarity search against the stored document embeddings. Chroma supports querying with precomputed embeddings and returning the nearest results using `n_results`.
+
+```text
+User Question
+      ↓
+Query Embedding
+      ↓
+Vector Similarity Search
+      ↓
+Top-K Relevant Chunks
+```
+
+---
+
+### 5. Grounding
+
+The retrieved policy chunks are provided to Gemini as context.
+
+The model is instructed to answer using only the retrieved information.
+
+This helps reduce unsupported answers and hallucinations.
+
+---
+
+## 💡 Example Questions
+
+### Leave Policy
+
+```text
+How many annual leave days do employees receive?
+```
+
+```text
+Can unused annual leave be carried forward?
+```
+
+```text
+How many days in advance should I request annual leave?
+```
+
+### Work From Home
+
+```text
+How many days can employees work from home?
+```
+
+```text
+Does WFH require manager approval?
+```
+
+### Travel
+
+```text
+What is the hotel reimbursement limit for domestic travel?
+```
+
+```text
+How many days before travel should I submit a request?
+```
+
+### Benefits
+
+```text
+What health insurance coverage is provided?
+```
+
+---
+
+## 🛡️ Grounding and Hallucination Control
+
+The application deliberately distinguishes between **company policy information** and **employee-specific information**.
+
+For example:
+
+```text
+Question:
+
+What is the annual leave entitlement?
+
+Answer:
+
+Employees receive 20 days of annual leave per year.
+```
+
+But:
+
+```text
+Question:
+
+What is my current leave balance?
+
+Answer:
+
+The policy documents do not contain the employee's
+individual leave balance.
+```
+
+The second question requires access to an HR/Employee Self-Service system.
+
+This demonstrates an important enterprise AI principle:
+
+```text
+Policy Knowledge
+       ↓
+       RAG
+       ↓
+Generic policy answer
+
+
+Employee-specific data
+       ↓
+API / Tool
+       ↓
+HR system
+       ↓
+Personalized answer
+```
+
+---
+
+## 🖥️ Streamlit Application
+
+The project includes a Streamlit interface for interacting with the RAG pipeline.
+
+Run:
 
 ```bash
-git clone <repository-url>
-cd hr_assistant_rag
+streamlit run main.py
 ```
 
-2. Create and activate a virtual environment:
+Streamlit runs the Python application as a server and provides the interactive browser interface.
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Santoshbsk/enterprise-policy-rag.git
+
+cd enterprise-policy-rag
+```
+
+### 2. Create a virtual environment
+
+Windows:
+
+```powershell
+python -m venv .venv
+
+.venv\Scripts\Activate.ps1
+```
+
+Linux/macOS:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Linux/macOS
-.venv\Scripts\activate      # Windows
+
+source .venv/bin/activate
 ```
 
-3. Install dependencies:
+Using a virtual environment is recommended to isolate project dependencies.
+
+---
+
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Configuration
+---
 
-Create a `.env` file based on `.env.example` and add your configuration values.
+### 4. Configure Gemini API key
 
-Example:
+Create a `.env` file:
 
-```env
-OPENAI_API_KEY=your_api_key
-OPENAI_MODEL=gpt-4o-mini
-EMBEDDING_MODEL=text-embedding-3-small
-VECTOR_DB_PATH=./vector_store
+```text
+GEMINI_API_KEY=your_api_key_here
 ```
 
-Depending on the implementation, you may also need values for:
+Never commit `.env` or your API key to GitHub.
 
-- API host and port
-- Model provider endpoint
-- Azure deployment names
-- Index names
-- Data directory paths
+A template is provided as:
 
-## Data Preparation
+```text
+.env.example
+```
 
-To make the assistant useful, add HR-related documents such as:
+---
 
-- employee handbook
-- leave policy
-- benefits guide
-- reimbursement procedures
-- remote work policy
-- recruitment and onboarding docs
-- internal HR FAQs
+## 📥 Ingest Documents
 
-These files should be placed in the project’s data folder or an input directory used by the ingestion pipeline.
+Place the policy documents inside:
 
-## Ingestion / Indexing
+```text
+documents/
+```
 
-Run the document ingestion process to parse and embed your HR content.
+Then run:
 
 ```bash
-python run.py --ingest
+python ingest.py
 ```
 
-Or use the project’s specific indexing command if provided by the application.
+The ingestion process:
 
-## Running the Application
+```text
+Policy Documents
+      ↓
+Chunking
+      ↓
+Metadata
+      ↓
+Gemini Embeddings
+      ↓
+ChromaDB
+```
 
-Start the application locally:
+ChromaDB's persistent client stores the vector database locally so it can be reused between application runs.
+
+---
+
+## 🔎 Test Semantic Search
+
+You can test retrieval independently using:
 
 ```bash
-python run.py
+python search.py
 ```
 
-If the project exposes an API server:
+This displays:
+
+* Retrieved documents
+* Metadata
+* Similarity/distance information
+
+---
+
+## 💬 Run the RAG Application
+
+Start Streamlit:
 
 ```bash
-uvicorn app.main:app --reload
+streamlit run main.py
 ```
 
-If it uses a web UI:
+Or:
 
 ```bash
-streamlit run app.py
+python -m streamlit run main.py
 ```
 
-## Usage
+Streamlit supports both approaches.
 
-Once the app is running, ask questions like:
+---
 
-- "What is the company's leave policy?"
-- "How do employees request travel reimbursement?"
-- "What are the onboarding steps for new hires?"
-- "What benefits are available for full-time employees?"
+## 📦 Project Structure
 
-The assistant will search the indexed documents and respond based on the most relevant retrieved information.
+```text
+enterprise-policy-rag/
+│
+├── documents/
+│   ├── leave_policy.txt
+│   ├── travel_policy.txt
+│   ├── wfh_policy.txt
+│   └── benefits_policy.txt
+│
+├── main.py
+│   └── Streamlit user interface
+│
+├── rag.py
+│   └── RAG orchestration
+│
+├── ingest.py
+│   └── Document ingestion pipeline
+│
+├── embeddings.py
+│   └── Gemini embedding generation
+│
+├── chunking.py
+│   └── Document chunking logic
+│
+├── config.py
+│   └── Configuration and environment variables
+│
+├── search.py
+│   └── Standalone semantic-search testing
+│
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
+```
 
-## Best Practices
+---
 
-- Keep HR documents up to date and approved by the HR team.
-- Use clean, structured source documents to improve retrieval quality.
-- Avoid indexing sensitive or outdated material.
-- Validate responses for legal/compliance content before deployment.
-- Monitor retrieval quality and prompt performance.
+## 🔐 Security
 
-## Security and Privacy
+The following files/directories should not be committed:
 
-This project may handle sensitive HR information. Before using it in production:
+```text
+.env
+.venv/
+__pycache__/
+chroma_db/
+```
 
-- restrict internal access
-- secure API keys and environment variables
-- use authentication and authorization
-- review data retention and logging policies
-- ensure compliance with internal privacy standards
+The Gemini API key should always be provided through an environment variable.
 
-## Future Enhancements
+---
 
-Possible improvements include:
+## 📊 Current Architecture
 
-- multi-language support
-- fine-tuned retrieval strategies
-- user-specific access control
-- employee identity-aware answers
-- analytics dashboard for popular HR questions
-- integration with internal chat and intranet tools
+| Component       | Technology             |
+| --------------- | ---------------------- |
+| Language        | Python                 |
+| LLM             | Google Gemini          |
+| Embeddings      | Gemini Embedding       |
+| Vector Database | ChromaDB               |
+| UI              | Streamlit              |
+| Retrieval       | Semantic Vector Search |
+| RAG             | Custom Python pipeline |
+| Configuration   | python-dotenv          |
 
-## License
+---
 
-This project is provided for internal or educational use unless otherwise specified by the repository owner. Please check the license file if one is included in the project.
+## 🚧 Current Limitations
 
-## Contributing
+This is a portfolio/learning implementation.
 
-Contributions are welcome. If you would like to improve the project:
+* Policy documents are fictional.
+* No real employee data is accessed.
+* No authentication or authorization is implemented.
+* ChromaDB runs locally.
+* No production observability is implemented.
+* No HR system integration currently exists.
+* Retrieval evaluation metrics have not yet been added.
 
-1. create a feature branch
-2. make your changes
-3. validate the behavior locally
-4. submit a pull request with a clear description
+---
 
-## Contact
+## 🔮 Future Enhancements
 
-For questions or support, reach out to the project maintainer or team responsible for the HR assistant deployment.
+### Phase 1 — Advanced RAG
+
+* Metadata filtering
+* Similarity score thresholds
+* Source citations
+* Conversation history
+* Query rewriting
+* Reranking
+* RAG evaluation
+* Retrieval quality metrics
+
+### Phase 2 — Tool Calling
+
+Add tools such as:
+
+```text
+get_leave_balance()
+get_employee_details()
+check_wfh_eligibility()
+get_travel_entitlement()
+```
+
+Architecture:
+
+```text
+                    User
+                      │
+                      ▼
+                    Agent
+                      │
+          ┌───────────┼───────────┐
+          ▼           ▼           ▼
+        RAG        HR API      Travel API
+          │           │           │
+          ▼           ▼           ▼
+       Policies   Employee     Expenses
+```
+
+### Phase 3 — Agentic AI
+
+The project can evolve into an enterprise HR assistant capable of:
+
+* Retrieving policy information
+* Calling enterprise APIs
+* Checking employee-specific information
+* Performing multi-step workflows
+* Selecting tools based on user intent
+* Maintaining conversation context
+
+---
+
+## 🎯 Learning Outcomes
+
+This project demonstrates practical understanding of:
+
+* Large Language Models
+* Prompt Engineering
+* Embeddings
+* Vector Representations
+* Cosine/Vector Similarity
+* Semantic Search
+* Document Chunking
+* Metadata
+* Vector Databases
+* Retrieval-Augmented Generation
+* Grounding
+* Hallucination Mitigation
+* Gemini API
+* ChromaDB
+* Streamlit
+* Python AI Application Development
+
+---
+
+## 📚 References
+
+### Google Gemini
+
+* Google Gemini API documentation:
+  https://ai.google.dev/gemini-api/docs
+
+* Gemini Embeddings:
+  https://ai.google.dev/gemini-api/docs/embeddings
+
+* Gemini Embedding model:
+  https://ai.google.dev/gemini-api/docs/models/gemini-embedding-001
+
+Google's documentation describes embeddings as numerical representations useful for semantic search and document retrieval and documents retrieval-specific embedding task types.
+
+### ChromaDB
+
+* Chroma documentation:
+  https://docs.trychroma.com/
+
+* Query and Get:
+  https://docs.trychroma.com/docs/querying-collections/query-and-get
+
+* Persistent Client:
+  https://docs.trychroma.com/docs/run-chroma/clients
+
+Chroma provides nearest-neighbor vector querying and supports metadata filtering during retrieval.
+
+### Streamlit
+
+* Streamlit documentation:
+  https://docs.streamlit.io/
+
+* Installation:
+  https://docs.streamlit.io/get-started/installation
+
+* Create an app:
+  https://docs.streamlit.io/get-started/tutorials/create-an-app
+
+Streamlit is used here as the interactive application layer.
+
+---
+
+## 👨‍💻 Author
+
+**Santosh Bhatraju**
+
+Enterprise Automation | Conversational AI | Generative AI | RAG | Agentic AI
+
+---
+
+## ⭐ Project Evolution
+
+```text
+Conversational AI
+       │
+       ▼
+      LLM
+       │
+       ▼
+   Embeddings
+       │
+       ▼
+ Semantic Search
+       │
+       ▼
+      RAG
+       │
+       ▼
+ Tool Calling
+       │
+       ▼
+ Agentic AI
+```
+
+This project represents the transition from traditional conversational AI toward modern LLM, RAG, and Agentic AI engineering.
