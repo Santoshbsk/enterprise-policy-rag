@@ -24,7 +24,7 @@ for message in st.session_state.messages:
                 for source in message["sources"]:
                     st.write(
                         f"{source['name']} | chunk={source['chunk']} "
-                        f"| distance={source['distance']:.4f}"
+                        #f"| distance={source['distance']:.4f}"
                     )
 
 question = st.chat_input("Ask about leave, benefits, travel, or work from home...")
@@ -37,12 +37,12 @@ if question:
     with st.chat_message("assistant"):
         with st.spinner("Checking the policy documents..."):
             try:
-                answer, results = ask_question(question, top_k=3)
+                answer, results = ask_question(question, retrieval_k=10, final_k=3)
                 sources = [
                     {
                         "name": metadata.get("source", "Unknown source"),
                         "chunk": metadata.get("chunk_id", "Unknown"),
-                        "distance": results["distances"][0][index],
+                     #   "distance": results["distances"][0][index],
                     }
                     for index, metadata in enumerate(results["metadatas"][0])
                 ]
@@ -51,7 +51,7 @@ if question:
                     for source in sources:
                         st.write(
                             f"{source['name']} | chunk={source['chunk']} "
-                            f"| distance={source['distance']:.4f}"
+                      #      f"| distance={source['distance']:.4f}"
                         )
                 st.session_state.messages.append(
                     {"role": "assistant", "content": answer, "sources": sources}
