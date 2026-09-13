@@ -3,4 +3,9 @@ google-genai
 chromadb
 python-dotenv
 ragas
+<<<<<<< HEAD
 datasets
+sentence-transformers
+=======
+datasets
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499

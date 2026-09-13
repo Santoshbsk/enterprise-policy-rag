@@ -16,6 +16,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import GEMINI_API_KEY, LLM_MODEL, PROJECT_ROOT
+<<<<<<< HEAD
+from scope import check_scope
+=======
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499
 from datasets import Dataset
 
 from ragas import evaluate
@@ -64,11 +68,82 @@ def build_ragas_dataset(test_cases):
 
         question = test_case["question"]
         reference_answer = test_case["reference_answer"]
+<<<<<<< HEAD
+        expected_scope = test_case.get("expected_scope", "in_scope")
+=======
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499
 
         print()
         print("=" * 70)
         print(f"Evaluating {index}/{len(test_cases)}")
         print(f"Question: {question}")
+<<<<<<< HEAD
+        print(f"Expected scope: {expected_scope}")
+
+        try:
+
+            # --------------------------------------------------
+            # OUT-OF-SCOPE QUESTION
+            # --------------------------------------------------
+
+            if expected_scope == "out_of_scope":
+
+                is_in_scope = check_scope(question)
+
+                print(f"Scope classifier: {is_in_scope}")
+
+                if not is_in_scope:
+
+                    answer = (
+                        "I can't answer that because the required "
+                        "employee-specific information is not available "
+                        "in the company policy knowledge base."
+                    )
+
+                    print(f"Answer: {answer}")
+
+                    # Do NOT add this question to the RAGAS dataset.
+                    continue
+
+                else:
+
+                    print(
+                        "WARNING: Expected OUT_OF_SCOPE but "
+                        "classifier returned IN_SCOPE."
+                    )
+
+                    continue
+
+            # --------------------------------------------------
+            # IN-SCOPE QUESTION
+            # --------------------------------------------------
+
+            answer, results = ask_question(
+                query=question,
+                retrieval_k=10,
+                final_k=3
+            )
+
+            retrieved_documents = results.get("documents", [[]])[0]
+            retrieved_metadatas = results.get("metadatas", [[]])[0]
+
+            retrieved_contexts = []
+
+            for document, metadata in zip(
+                retrieved_documents,
+                retrieved_metadatas
+            ):
+
+                source = metadata.get("source", "Unknown Source")
+                policy_id = metadata.get("policy_id", "Unknown Policy")
+
+                enriched_context = (
+                    f"[Source: {source} | Policy ID: {policy_id}]\n"
+                    f"{document}"
+                )
+
+                retrieved_contexts.append(enriched_context)
+=======
 
         try:
 
@@ -84,6 +159,7 @@ def build_ragas_dataset(test_cases):
                 for document in retrieved_documents
                 if document
             ]
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499
 
             print(f"Retrieved chunks: {len(retrieved_contexts)}")
             print(f"Answer: {answer}")
@@ -158,7 +234,23 @@ def evaluate_rag(dataset):
 def save_results(result):
 
     result_df = result.to_pandas()
+<<<<<<< HEAD
+    print()
+    print("=" * 70)
+    print("ANSWER RELEVANCY ANALYSIS")
+    print("=" * 70)
 
+    print(
+        result_df[
+            ["user_input", "answer_relevancy"]
+        ].sort_values(
+            by="answer_relevancy",
+            ascending=True
+        ).to_string(index=False)
+    )
+=======
+
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499
     output_csv = RESULTS_DIR / "ragas_results.csv"
 
     result_df.to_csv(
@@ -205,7 +297,10 @@ def save_results(result):
 # --------------------------------------------------
 
 def main():
+<<<<<<< HEAD
+=======
     print(GEMINI_API_KEY)
+>>>>>>> 41e3555265d117d711f985d8754af6bdf98c2499
     print()
     print("=" * 70)
     print("ENTERPRISE POLICY RAG - RAGAS EVALUATION")
